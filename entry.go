@@ -11,35 +11,10 @@ import (
 	"strconv"
 	"bufio"
 	"unicode/utf8"
-	"bytes"
 )
 
 const baseDirname = ".metipo"
 const materialsDirname = "materials"
-
-var buffer bytes.Buffer
-
-func bufferPrint(str string) {
-	fmt.Print(str)
-	buffer.WriteString(str)
-}
-
-func bufferPrintln(str string) {
-	fmt.Println(str)
-	buffer.WriteString(str + "\n")
-}
-
-func bufferPrintWithBlink(str string, color utils.Color) {
-	buffer.WriteString(utils.PrintWithBlink(str, color))
-}
-
-func bufferPrintWithColor(str string, color utils.Color) {
-	buffer.WriteString(utils.PrintWithColor(str, color))
-}
-
-func bufferDeleteUntilLineEnd(newline bool) {
-	buffer.WriteString(utils.DeleteUntilLineEnd(newline))
-}
 
 func main() {
 	var materialsDir = createMetipoDirectory()
@@ -56,7 +31,7 @@ func main() {
 	waitKeyInputUntilESC(*material, "[ Please 'ESC' key to quit ]")
 
 	utils.Decorate("-*--*--*--*-", 4)
-	fmt.Println(buffer.String())
+	fmt.Println(utils.MyBuffer.String())
 	utils.Decorate("-*--*--*--*-", 4)
 }
 
@@ -91,8 +66,8 @@ func waitKeyInputUntilESC(material os.File, msg string) {
 	var line = lines[lineIndex]
 	utils.PrintlnWithColor(line, utils.DarkGray)
 	var charIndex = 0
-	bufferPrintWithBlink("|", utils.LightGray)
-	bufferPrint("\b")
+	utils.MyPrintWithBlink("|", utils.LightGray)
+	utils.MyPrint("\b")
 
 loop:
 	for {
@@ -112,9 +87,9 @@ loop:
 				break loop
 
 			case termbox.KeySpace:
-				bufferPrint(" ")
-				bufferPrintWithBlink("|", utils.LightGray)
-				bufferPrint("\b")
+				utils.MyPrint(" ")
+				utils.MyPrintWithBlink("|", utils.LightGray)
+				utils.MyPrint("\b")
 
 			case termbox.KeyEnter:
 				var isLineEnd = charIndex == utf8.RuneCountInString(line)
@@ -123,17 +98,17 @@ loop:
 					lineIndex += 1
 					if lineIndex == len(lines) {
 						// カーソルから行末まで削除
-						bufferDeleteUntilLineEnd(false)
+						utils.MyDeleteUntilLineEnd(false)
 						break loop
 					} else {
 						// カーソルから行末まで削除
-						bufferDeleteUntilLineEnd(true)
+						utils.MyDeleteUntilLineEnd(true)
 					}
 
 					line = lines[lineIndex]
 					utils.PrintlnWithColor(line, utils.DarkGray)
-					bufferPrintWithBlink("|", utils.LightGray)
-					bufferPrint("\b")
+					utils.MyPrintWithBlink("|", utils.LightGray)
+					utils.MyPrint("\b")
 
 					charIndex = 0
 				}
@@ -144,20 +119,20 @@ loop:
 					var ansChar = string([]rune(line)[charIndex])
 
 					if input == ansChar {
-						bufferPrint(input)
+						utils.MyPrint(input)
 						charIndex += 1
 
-						bufferPrintWithBlink("|", utils.LightGray)
-						bufferPrint("\b")
+						utils.MyPrintWithBlink("|", utils.LightGray)
+						utils.MyPrint("\b")
 					} else {
 						// ビープ音
 						fmt.Print("\a")
 
-						bufferPrintWithBlink("|", utils.LightGray)
-						bufferPrintWithColor(input, utils.Red)
-						bufferDeleteUntilLineEnd(false)
+						utils.MyPrintWithBlink("|", utils.LightGray)
+						utils.MyPrintWithColor(input, utils.Red)
+						utils.MyDeleteUntilLineEnd(false)
 						utils.Routine(3, func() {
-							bufferPrint("\b")
+							utils.MyPrint("\b")
 						})
 					}
 				}
