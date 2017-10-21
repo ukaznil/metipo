@@ -1,1 +1,1 @@
-go install ukaznil.com/metipo && ./metipo
+go install github.com/ukaznil/metipo && ${GOPATH}/bin/metipo
