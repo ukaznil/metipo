@@ -47,14 +47,17 @@ func main() {
 
 	var material, err = os.Open(
 		filepath.Join(materialsDir.Name(),
-			"saying.txt"))
+			//"saying.txt"))
+			"aiueo.txt"))
 	defer material.Close()
 	utils.Perror(err)
 
 	countDown(0)
 	waitKeyInputUntilESC(*material, "[ Please 'ESC' key to quit ]")
 
+	utils.Decorate("-*--*--*--*-", 4)
 	fmt.Println(buffer.String())
+	utils.Decorate("-*--*--*--*-", 4)
 }
 
 func countDown(sec int) {
@@ -83,12 +86,13 @@ func waitKeyInputUntilESC(material os.File, msg string) {
 		var line = scanner.Text()
 		lines = append(lines, line)
 	}
-	//fmt.Println(lines)
 
 	var lineIndex = 0
 	var line = lines[lineIndex]
-	fmt.Println(line)
+	utils.PrintlnWithColor(line, utils.DarkGray)
 	var charIndex = 0
+	bufferPrintWithBlink("|", utils.LightGray)
+	bufferPrint("\b")
 
 loop:
 	for {
@@ -99,39 +103,36 @@ loop:
 			switch ev.Key {
 			case termbox.KeyBackspace,
 				termbox.KeyBackspace2,
-				termbox.KeyDelete:
+				termbox.KeyDelete,
+				termbox.KeyArrowLeft,
+				termbox.KeyArrowRight:
 				//fmt.Println("[" + string(ev.Ch) + "]")
 
 			case termbox.KeyEsc:
 				break loop
 
 			case termbox.KeySpace:
-				//fmt.Print(" ")
 				bufferPrint(" ")
-				//utils.PrintWithBlink("|", utils.White)
-				bufferPrintWithBlink("|", utils.White)
-				//fmt.Print("\b")
+				bufferPrintWithBlink("|", utils.LightGray)
 				bufferPrint("\b")
 
 			case termbox.KeyEnter:
 				var isLineEnd = charIndex == utf8.RuneCountInString(line)
 
 				if isLineEnd {
-					// カーソルから行末まで削除
-					//utils.DeleteUntilLineEnd(true)
-					bufferDeleteUntilLineEnd(true)
 					lineIndex += 1
-
 					if lineIndex == len(lines) {
+						// カーソルから行末まで削除
+						bufferDeleteUntilLineEnd(false)
 						break loop
+					} else {
+						// カーソルから行末まで削除
+						bufferDeleteUntilLineEnd(true)
 					}
 
 					line = lines[lineIndex]
-					//fmt.Println(line)
-					bufferPrintln(line)
-					//utils.PrintWithBlink("|", utils.White)
-					bufferPrintWithBlink("|", utils.White)
-					//fmt.Print("\b")
+					utils.PrintlnWithColor(line, utils.DarkGray)
+					bufferPrintWithBlink("|", utils.LightGray)
 					bufferPrint("\b")
 
 					charIndex = 0
@@ -139,27 +140,26 @@ loop:
 
 			default:
 				var input = string(ev.Ch)
-				var ansChar = string([]rune(line)[charIndex])
+				if charIndex < utf8.RuneCountInString(line) {
+					var ansChar = string([]rune(line)[charIndex])
 
-				if input == ansChar {
-					//fmt.Print(input)
-					bufferPrint(input)
-					charIndex += 1
-					//utils.PrintWithBlink("|", utils.White)
-					bufferPrintWithBlink("|", utils.White)
-					//fmt.Print("\b")
-					bufferPrint("\b")
-				} else {
-					//utils.PrintWithBlink("|", utils.White)
-					bufferPrintWithBlink("|", utils.White)
-					//utils.PrintWithColor(input, utils.Red)
-					bufferPrintWithColor(input, utils.Red)
-					//utils.DeleteUntilLineEnd(false)
-					bufferDeleteUntilLineEnd(false)
-					utils.Routine(3, func() {
-						//fmt.Print("\b")
+					if input == ansChar {
+						bufferPrint(input)
+						charIndex += 1
+
+						bufferPrintWithBlink("|", utils.LightGray)
 						bufferPrint("\b")
-					})
+					} else {
+						// ビープ音
+						fmt.Print("\a")
+
+						bufferPrintWithBlink("|", utils.LightGray)
+						bufferPrintWithColor(input, utils.Red)
+						bufferDeleteUntilLineEnd(false)
+						utils.Routine(3, func() {
+							bufferPrint("\b")
+						})
+					}
 				}
 			}
 		}
