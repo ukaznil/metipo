@@ -28,10 +28,12 @@ func main() {
 	utils.Perror(err)
 
 	countDown(0)
-	waitKeyInputUntilESC(*material, "[ Please 'ESC' key to quit ]")
+	var stats = waitKeyInputUntilESC(*material, "[ Please 'ESC' key to quit ]")
 
-	utils.Decorate("-*--*--*--*-", 4)
+	utils.Decorate("------------", 4)
 	fmt.Println(utils.MyBuffer.String())
+	utils.Decorate("-*--*--*--*-", 4)
+	fmt.Print(stats.String())
 	utils.Decorate("-*--*--*--*-", 4)
 }
 
@@ -45,14 +47,15 @@ func countDown(sec int) {
 	time.Sleep(1 * time.Second)
 }
 
-func waitKeyInputUntilESC(material os.File, msg string) {
+func waitKeyInputUntilESC(material os.File, msg string) *utils.Stats {
 	if err := termbox.Init(); err != nil {
 		panic(err)
 	}
 	defer termbox.Close()
 
 	fmt.Println(msg)
-	utils.HLine()
+	//utils.HLine()
+	utils.Decorate("-*--*--*--*-", 4)
 
 	var scanner = bufio.NewScanner(&material)
 	utils.Perror(scanner.Err())
@@ -65,9 +68,14 @@ func waitKeyInputUntilESC(material os.File, msg string) {
 	var lineIndex = 0
 	var line = lines[lineIndex]
 	utils.PrintlnWithColor(line, utils.DarkGray)
+	//utils.Decorate("------------", 4)
 	var charIndex = 0
 	utils.MyPrintWithBlink("|", utils.LightGray)
 	utils.MyPrint("\b")
+
+	// 計測開始
+	var stats = utils.NewStats()
+	stats.Begin()
 
 loop:
 	for {
@@ -106,6 +114,7 @@ loop:
 					}
 
 					line = lines[lineIndex]
+					utils.Decorate("------------", 4)
 					utils.PrintlnWithColor(line, utils.DarkGray)
 					utils.MyPrintWithBlink("|", utils.LightGray)
 					utils.MyPrint("\b")
@@ -127,6 +136,7 @@ loop:
 					} else {
 						// ビープ音
 						fmt.Print("\a")
+						stats.AddErrorCount(utils.CorrectWrong{Correct: ansChar, Wrong: input})
 
 						utils.MyPrintWithBlink("|", utils.LightGray)
 						utils.MyPrintWithColor(input, utils.Red)
@@ -136,10 +146,19 @@ loop:
 						})
 					}
 				}
+				/*
+				else {
+					errorCount += 1
+				}
+				*/
 			}
 		}
 	}
+
 	termbox.Sync()
+	stats.End()
+
+	return stats
 }
 
 func createMetipoDirectory() os.File {
