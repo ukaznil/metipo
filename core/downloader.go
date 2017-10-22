@@ -61,14 +61,14 @@ func downloadFile(url string, dest string) string {
 	}
 }
 
-func DownloadFromGitHub(dest os.File) {
+func DownloadFromGitHub(dest string) {
 	fmt.Println("[MeTipo] now start downloading...")
 	utils.HLine()
 	var list = getDownloadList()
 	for _, fileInfo := range list {
 		var success = downloadFile(
 			fileInfo.DownloadUrl,
-			filepath.Join(dest.Name(), fileInfo.Name))
+			filepath.Join(dest, fileInfo.Name))
 		fmt.Println(fileInfo.Name + ": " + success)
 	}
 	utils.HLine()

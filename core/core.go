@@ -17,17 +17,15 @@ func selectMaterialName() string {
 	var items, err = ioutil.ReadDir(materialsDir.Name())
 	utils.Perror(err)
 
-	var files []os.File
+	var filepaths []string
 	for _, item := range items {
 		if !item.IsDir() {
-			var file, err = os.Open(filepath.Join(materialsDir.Name(), item.Name()))
-			utils.Perror(err)
-			files = append(files, *file)
+			var fp = filepath.Join(materialsDir.Name(), item.Name())
+			filepaths = append(filepaths, fp)
 		}
 	}
 
-	var file = files[rand.Intn(len(files))]
-	return file.Name()
+	return filepaths[rand.Intn(len(filepaths))]
 }
 
 func Exercise() {
@@ -145,11 +143,6 @@ loop:
 						})
 					}
 				}
-				/*
-				else {
-					errorCount += 1
-				}
-				*/
 			}
 		}
 	}
