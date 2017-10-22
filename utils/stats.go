@@ -47,7 +47,7 @@ func (s *Stats) String() string {
 		var list = List{}
 		for k, v := range s.mistakeTrend {
 			list = append(list, entry{
-				key:   "[" + k.Correct + " -> " + k.Wrong + "]",
+				key:   "['" + k.Correct + "' -> '" + k.Wrong + "']",
 				value: strconv.Itoa(v),
 			})
 		}

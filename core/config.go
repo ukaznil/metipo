@@ -7,11 +7,18 @@ import (
 	"github.com/ukaznil/metipo/utils"
 	"os"
 	"bufio"
+	"fmt"
 )
 
-type settings struct {
-	ModelColor utils.Color
-	YourColor  utils.Color
+type Language string
+
+const (
+	Japanese = "ja"
+	English  = "en"
+)
+
+type config struct {
+	Langs []Language `yaml:"langs"`
 }
 
 func getConfigFilepath() string {
@@ -20,30 +27,41 @@ func getConfigFilepath() string {
 }
 
 func InitConfig() {
-	resetConfig()
+	// todo
 }
 
 func changeConfig() {
-	buf, err := ioutil.ReadFile(getConfigFilepath())
-	utils.Perror(err)
-
-	var stgs settings
-	err = yaml.Unmarshal(buf, &stgs)
-	utils.Perror(err)
+	// todo
 }
 
 func resetConfig() {
-	var stgs = settings{
-		ModelColor: utils.LightGray,
-		YourColor:  utils.White,
+	var cfg = config{
+		Langs: []Language{Japanese, English},
 	}
-	buf, err := yaml.Marshal(&stgs)
+	buf, err := yaml.Marshal(cfg)
 	utils.Perror(err)
 
 	// output
 	configFile, err := os.OpenFile(getConfigFilepath(), os.O_WRONLY|os.O_CREATE, 0600)
 	defer configFile.Close()
 	var writer = bufio.NewWriter(configFile)
+	fmt.Println(buf)
 	writer.Write(buf)
 	writer.Flush()
+}
+
+func getCurrentLanguages() []Language {
+	var configFilepath = getConfigFilepath()
+	if _, err := os.Stat(configFilepath); err != nil {
+		resetConfig()
+	}
+
+	buf, err := ioutil.ReadFile(configFilepath)
+	utils.Perror(err)
+
+	var cfg config
+	err = yaml.Unmarshal(buf, &cfg)
+	utils.Perror(err)
+
+	return cfg.Langs
 }

@@ -9,7 +9,30 @@ import (
 	"os"
 	"io/ioutil"
 	"path/filepath"
+	"math/rand"
+	"strconv"
+	"time"
 )
+
+func DownloadWikipediaArticle(langs ...Language) string {
+	rand.Seed(time.Now().UnixNano())
+	var lang = langs[rand.Intn(len(langs))]
+	pageInfo, err := GetRandomArticleInfo(lang)
+	if err != nil {
+		panic("Unknown error occurred. Please try again a little while later.")
+	}
+
+	var filename = string(lang) + "_" + strconv.FormatInt(pageInfo.PageId, 10) + ".txt"
+	var filepath = filepath.Join(getMaterialsDirpath(), filename)
+	file, err := os.Create(filepath)
+	defer file.Close()
+	utils.Perror(err)
+
+	var content = pageInfo.Title + "\n" + pageInfo.Summary
+	file.WriteString(content)
+
+	return filepath
+}
 
 type fileInfo struct {
 	Name        string `json:"name"`

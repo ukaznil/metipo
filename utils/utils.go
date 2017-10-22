@@ -3,6 +3,8 @@ package utils
 import (
 	"fmt"
 	"bytes"
+	"strings"
+	"unicode/utf8"
 )
 
 func Perror(err error) {
@@ -87,4 +89,58 @@ func PrintWithColor(msg string, color Color) string {
 
 func PrintlnWithColor(msg string, color Color) string {
 	return PrintWithColor(msg+"\n", color)
+}
+
+func min(i, j int) int {
+	if i < j {
+		return i
+	} else {
+		return j
+	}
+}
+
+func SeparateByLength(str string, l int) []string {
+	var length = utf8.RuneCountInString(str)
+	var ret = make([]string, 0)
+
+	var index = 0
+	for ; index < length; {
+		var lastIndex = strings.LastIndex(str[index: min(index+l, length)], " ")
+		var until int
+		if lastIndex != -1 {
+			until = index + lastIndex + 1
+		} else {
+			until = min(index+l, length)
+		}
+
+		/*
+		var newStr = strings.Replace(str[index:until], " ", "", -1)
+		if len(newStr) != 0 {
+			ret = append(ret, newStr)
+		}
+		*/
+		var trimed = strings.TrimRight(str[index:until], " ")
+		if len(trimed) != 0 {
+			ret = append(ret, trimed)
+		}
+		index = until
+	}
+
+	return ret
+	/*
+	var ret = make([]string, 0)
+	var tmp = ""
+	for i, r := range []rune(str) {
+		tmp += string(r)
+		if i > 0 && (i+1)%l == 0 {
+			ret = append(ret, tmp)
+			tmp = ""
+		}
+	}
+	if len(tmp) != 0 {
+		ret = append(ret, tmp)
+	}
+
+	return ret
+	*/
 }

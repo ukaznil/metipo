@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"path/filepath"
+	"time"
 )
 
 func selectMaterialName() string {
@@ -25,12 +26,20 @@ func selectMaterialName() string {
 		}
 	}
 
+	rand.Seed(time.Now().UnixNano())
 	return filepaths[rand.Intn(len(filepaths))]
 }
 
 func Exercise() {
 	//comm.DownloadFromGitHub(materialsDir)
-	var material, err = os.Open(selectMaterialName())
+	rand.Seed(time.Now().UnixNano())
+	var langs = getCurrentLanguages()
+	var lang = langs[rand.Intn(len(langs))]
+	fmt.Println(langs, lang)
+
+	var filepath = DownloadWikipediaArticle(lang)
+	//var material, err = os.Open(selectMaterialName())
+	var material, err = os.Open(filepath)
 	defer material.Close()
 	utils.Perror(err)
 
@@ -50,6 +59,8 @@ func waitKeyInputUntilESC(material os.File, msg string) *utils.Stats {
 	}
 	defer termbox.Close()
 
+	var width, _ = termbox.Size()
+
 	fmt.Println(msg)
 	//utils.HLine()
 	utils.Decorate("-*--*--*--*-", 4)
@@ -59,7 +70,10 @@ func waitKeyInputUntilESC(material os.File, msg string) *utils.Stats {
 	var lines = make([]string, 0)
 	for scanner.Scan() {
 		var line = scanner.Text()
-		lines = append(lines, line)
+		for _, limitedLine := range utils.SeparateByLength(line, width-1) {
+			//lines = append(lines, line)
+			lines = append(lines, limitedLine)
+		}
 	}
 
 	var lineIndex = 0
@@ -78,73 +92,84 @@ loop:
 	for {
 		line = lines[lineIndex]
 		var ev = termbox.PollEvent()
-		switch ev.Type {
-		case termbox.EventKey:
-			switch ev.Key {
-			case termbox.KeyBackspace,
-				termbox.KeyBackspace2,
-				termbox.KeyDelete,
-				termbox.KeyArrowLeft,
-				termbox.KeyArrowRight:
-				//fmt.Println("[" + string(ev.Ch) + "]")
+		//log.Println("[" + string(ev.Ch) + "]")
 
-			case termbox.KeyEsc:
-				break loop
+		switch ev.Key {
+		case termbox.KeyBackspace,
+			termbox.KeyBackspace2,
+			termbox.KeyDelete,
+			termbox.KeyArrowLeft,
+			termbox.KeyArrowRight:
 
-			case termbox.KeySpace:
-				utils.MyPrint(" ")
+		case termbox.KeyEsc:
+			break loop
+
+			/*
+		case termbox.KeySpace:
+			fmt.Println("<space>")
+			utils.MyPrint(" ")
+			utils.MyPrintWithBlink("|", utils.LightGray)
+			utils.MyPrint("\b")
+			*/
+
+		case termbox.KeyEnter:
+			var isLineEnd = charIndex == utf8.RuneCountInString(line)
+
+			if isLineEnd {
+				lineIndex += 1
+				if lineIndex == len(lines) {
+					// カーソルから行末まで削除
+					utils.MyDeleteUntilLineEnd(false)
+					break loop
+				} else {
+					// カーソルから行末まで削除
+					utils.MyDeleteUntilLineEnd(true)
+				}
+
+				line = lines[lineIndex]
+				utils.Decorate("------------", 4)
+				utils.PrintlnWithColor(line, utils.DarkGray)
 				utils.MyPrintWithBlink("|", utils.LightGray)
 				utils.MyPrint("\b")
 
-			case termbox.KeyEnter:
-				var isLineEnd = charIndex == utf8.RuneCountInString(line)
+				charIndex = 0
+			}
 
-				if isLineEnd {
-					lineIndex += 1
-					if lineIndex == len(lines) {
-						// カーソルから行末まで削除
-						utils.MyDeleteUntilLineEnd(false)
-						break loop
-					} else {
-						// カーソルから行末まで削除
-						utils.MyDeleteUntilLineEnd(true)
-					}
+		default:
+			var input string
+			switch ev.Key {
+			case termbox.KeySpace:
+				input = " "
+			default:
+				input = string(ev.Ch)
+			}
 
-					line = lines[lineIndex]
-					utils.Decorate("------------", 4)
-					utils.PrintlnWithColor(line, utils.DarkGray)
+			if charIndex < utf8.RuneCountInString(line) {
+				var ansChar = string([]rune(line)[charIndex])
+				//log.Println("[" + input + "," + ansChar + "]")
+
+				if input == ansChar {
+					utils.MyPrint(input)
+					charIndex += 1
+
 					utils.MyPrintWithBlink("|", utils.LightGray)
 					utils.MyPrint("\b")
+				} else {
+					// ビープ音
+					fmt.Print("\a")
+					stats.AddErrorCount(utils.CorrectWrong{Correct: ansChar, Wrong: input})
 
-					charIndex = 0
-				}
-
-			default:
-				var input = string(ev.Ch)
-				if charIndex < utf8.RuneCountInString(line) {
-					var ansChar = string([]rune(line)[charIndex])
-
-					if input == ansChar {
-						utils.MyPrint(input)
-						charIndex += 1
-
-						utils.MyPrintWithBlink("|", utils.LightGray)
+					utils.MyPrintWithBlink("|", utils.LightGray)
+					utils.MyPrintWithColor(input, utils.Red)
+					utils.MyDeleteUntilLineEnd(false)
+					utils.Routine(2, func() {
 						utils.MyPrint("\b")
-					} else {
-						// ビープ音
-						fmt.Print("\a")
-						stats.AddErrorCount(utils.CorrectWrong{Correct: ansChar, Wrong: input})
-
-						utils.MyPrintWithBlink("|", utils.LightGray)
-						utils.MyPrintWithColor(input, utils.Red)
-						utils.MyDeleteUntilLineEnd(false)
-						utils.Routine(3, func() {
-							utils.MyPrint("\b")
-						})
-					}
+					})
 				}
 			}
 		}
+
+		termbox.Flush()
 	}
 
 	termbox.Sync()
