@@ -1,29 +1,38 @@
-package main
+package core
 
 import (
-	"os/user"
-	"os"
-	"path/filepath"
-	"github.com/nsf/termbox-go"
 	"fmt"
 	"github.com/ukaznil/metipo/utils"
-	"time"
-	"strconv"
+	"github.com/nsf/termbox-go"
+	"os"
 	"bufio"
 	"unicode/utf8"
+	"io/ioutil"
+	"math/rand"
+	"path/filepath"
 )
 
-const baseDirname = ".metipo"
-const materialsDirname = "materials"
+func selectMaterialName() string {
+	var materialsDir = getOrCreateMaterialsDirectory()
+	var items, err = ioutil.ReadDir(materialsDir.Name())
+	utils.Perror(err)
 
-func main() {
-	var materialsDir = createMetipoDirectory()
+	var files []os.File
+	for _, item := range items {
+		if !item.IsDir() {
+			var file, err = os.Open(filepath.Join(materialsDir.Name(), item.Name()))
+			utils.Perror(err)
+			files = append(files, *file)
+		}
+	}
+
+	var file = files[rand.Intn(len(files))]
+	return file.Name()
+}
+
+func Exercise() {
 	//comm.DownloadFromGitHub(materialsDir)
-
-	var material, err = os.Open(
-		filepath.Join(materialsDir.Name(),
-			//"saying.txt"))
-			"aiueo.txt"))
+	var material, err = os.Open(selectMaterialName())
 	defer material.Close()
 	utils.Perror(err)
 
@@ -35,16 +44,6 @@ func main() {
 	utils.Decorate("-*--*--*--*-", 4)
 	fmt.Print(stats.String())
 	utils.Decorate("-*--*--*--*-", 4)
-}
-
-func countDown(sec int) {
-	for i := 0; i < sec; i++ {
-		fmt.Print(strconv.Itoa(sec-i) + "\r")
-		time.Sleep(1 * time.Second)
-	}
-
-	fmt.Println("!! MeTipo !!")
-	time.Sleep(1 * time.Second)
 }
 
 func waitKeyInputUntilESC(material os.File, msg string) *utils.Stats {
@@ -159,22 +158,4 @@ loop:
 	stats.End()
 
 	return stats
-}
-
-func createMetipoDirectory() os.File {
-	var usr, err = user.Current()
-	utils.Perror(err)
-
-	var dir = filepath.Join(usr.HomeDir, baseDirname, materialsDirname)
-	if _, err := os.Stat(dir); err != nil {
-		if err := os.Mkdir(dir, 0744); err != nil {
-			panic(err)
-		}
-	}
-
-	if ret, err := os.Open(dir); err != nil {
-		panic(err)
-	} else {
-		return *ret
-	}
 }

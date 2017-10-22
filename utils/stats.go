@@ -42,7 +42,7 @@ func (s *Stats) String() string {
 	buf.WriteString("Mistake Trend:\n")
 
 	if len(s.mistakeTrend) == 0 {
-		return "\tHappy NO mistake !!" + "\n"
+		buf.WriteString("\tHappy NO mistake !!" + "\n")
 	} else {
 		var list = List{}
 		for k, v := range s.mistakeTrend {
@@ -57,8 +57,9 @@ func (s *Stats) String() string {
 			var value = v.value
 			buf.WriteString("\t" + key + " -- " + value + " times.\n")
 		}
-		return buf.String()
 	}
+
+	return buf.String()
 }
 
 func (s *Stats) Begin() {
